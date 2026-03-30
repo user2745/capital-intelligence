@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Capital Intelligence — Newsletter Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #B8992A; --gold-light: #D4B84A; --gold-pale: #F5EED4;
+    --ink: #1A1A1A; --ink-mid: #3A3A3A; --ink-light: #6A6A6A;
+    --rule: #C8B86A; --paper: #FDFBF5; --paper-warm: #F8F4E8;
+    --surface: #FFFFFF; --border: rgba(184,153,42,0.25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --gold: #D4B84A; --gold-light: #E8CE70; --gold-pale: #2A2315;
+      --ink: #F0EDE4; --ink-mid: #C8C4B8; --ink-light: #8A8880;
+      --rule: #6A5820; --paper: #141210; --paper-warm: #1A1612;
+      --surface: #1E1A14; --border: rgba(212,184,74,0.2);
+    }
+  }
+
+  html, body { min-height: 100vh; }
+  body { font-family: 'Source Serif 4', Georgia, serif; background: var(--paper); color: var(--ink); }
+
+  /* MASTHEAD */
+  .masthead { border-bottom: 1px solid var(--rule); padding: 28px 32px 20px; text-align: center; }
+  .mrule { width: 100%; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .mrulethin { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--rule), transparent); margin-top: 16px; }
+  .pub-name { font-family: 'Playfair Display', serif; font-size: 38px; font-weight: 700; letter-spacing: 0.04em; line-height: 1; margin: 18px 0 0; }
+  .pub-tagline { font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin: 7px 0 14px; font-family: 'JetBrains Mono', monospace; }
+  .pub-meta { display: flex; justify-content: center; gap: 22px; font-size: 10px; color: var(--ink-light); font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; }
+  .pub-meta span::before { content: '◆ '; color: var(--gold); font-size: 6px; vertical-align: middle; }
+
+  .juris-strip { display: flex; justify-content: center; gap: 8px; padding: 9px 32px; background: var(--paper-warm); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .jbadge { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 10px; border: 0.5px solid var(--border); border-radius: 2px; color: var(--gold); }
+
+  /* CONTROLS */
+  .controls-bar { padding: 14px 32px; background: var(--paper-warm); border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .cg { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .cg label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); }
+  .cg input, .cg select {
+    background: var(--surface); border: 0.5px solid var(--border); border-radius: 4px;
+    padding: 7px 10px; font-family: 'Source Serif 4', serif; font-size: 13px;
+    color: var(--ink); outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  .cg input:focus, .cg select:focus { border-color: var(--gold); }
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+  .chip {
+    padding: 4px 9px; border: 0.5px solid var(--border); border-radius: 30px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer; color: var(--ink-light);
+    background: var(--surface); transition: all 0.15s; user-select: none;
+  }
+  .chip.on { background: var(--gold); border-color: var(--gold); color: var(--paper); }
+  .btn-row { display: flex; gap: 8px; align-self: flex-end; }
+  .gbtn {
+    background: var(--gold); color: var(--paper); border: none; border-radius: 4px;
+    padding: 0 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; height: 34px; white-space: nowrap;
+  }
+  .gbtn:hover { background: var(--gold-light); }
+  .gbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pbtn {
+    background: var(--surface); color: var(--ink-light); border: 0.5px solid var(--border);
+    border-radius: 4px; padding: 0 14px; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; height: 34px;
+  }
+  .pbtn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* BODY */
+  .nbody { max-width: 800px; margin: 0 auto; padding: 30px 32px 56px; }
+
+  #status-bar {
+    display: none; align-items: center; gap: 10px; padding: 10px 14px;
+    background: var(--paper-warm); border: 0.5px solid var(--border);
+    border-radius: 4px; margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: var(--gold);
+  }
+  #status-bar.vis { display: flex; }
+  .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: blink 1s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .edition-badge {
+    display: inline-flex; align-items: center; gap: 5px; background: var(--gold-pale);
+    border: 0.5px solid var(--border); border-radius: 2px; padding: 2px 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
+  }
+  .edition-badge::before { content: '●'; font-size: 6px; }
+
+  .data-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+    gap: 8px; margin-bottom: 20px; padding: 11px 14px;
+    background: var(--paper-warm); border: 0.5px solid var(--border); border-radius: 4px;
+  }
+  .dc { text-align: center; }
+  .dt { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-light); }
+  .dv { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 600; }
+  .dch { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .fl { color: var(--ink-light); }
+  .up { color: #2A8B10; } .dn { color: #9B2020; }
+  @media (prefers-color-scheme: dark) { .up{color:#6AC840} .dn{color:#E07070} }
+
+  .shead { display: flex; align-items: center; gap: 12px; margin: 34px 0 16px; }
+  .srule { flex: 1; height: 1px; background: var(--rule); opacity: 0.5; }
+  .slabel { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); padding: 4px 10px; border: 0.5px solid var(--border); border-radius: 2px; white-space: nowrap; }
+
+  .acard { background: var(--surface); border: 0.5px solid var(--border); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; padding: 16px 20px; margin-bottom: 14px; }
+  .akicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 5px; }
+  .aheadline { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 600; line-height: 1.3; margin-bottom: 10px; }
+  .abody { font-size: 14px; line-height: 1.82; color: var(--ink-mid); margin-bottom: 6px; }
+
+  .atag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; margin-top: 8px; margin-right: 4px; }
+  .t-bull { background: #E8F5E0; color: #2A6B10; }
+  .t-bear { background: #FCECEC; color: #8B2020; }
+  .t-neut { background: var(--paper-warm); color: var(--ink-light); border: 0.5px solid var(--border); }
+  .t-watch { background: #FFF8E0; color: #7A5800; }
+  @media (prefers-color-scheme: dark) {
+    .t-bull{background:#1A3010;color:#7BC850} .t-bear{background:#301010;color:#E87878} .t-watch{background:#2A2010;color:#D4A830}
+  }
+
+  .pquote { border-top: 2px solid var(--gold); border-bottom: 1px solid var(--rule); padding: 18px 26px; margin: 26px 0; background: var(--paper-warm); }
+  .pquote p { font-family: 'Playfair Display', serif; font-size: 17px; font-style: italic; line-height: 1.55; }
+  .pquote cite { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); display: block; margin-top: 9px; }
+
+  .placeholder { text-align: center; padding: 56px 32px; color: var(--ink-light); }
+  .placeholder p { font-style: italic; font-size: 14px; line-height: 1.75; }
+  .tipbox { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); background: var(--gold-pale); padding: 7px 14px; border-radius: 2px; border: 0.5px solid var(--border); }
+
+  #stream-display { font-family: 'Source Serif 4', serif; font-size: 13px; line-height: 1.85; color: var(--ink-mid); white-space: pre-wrap; padding: 8px 0; font-style: italic; }
+
+  .nfooter { border-top: 1px solid var(--rule); padding: 18px 32px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--ink-light); }
+  .frule { width: 100%; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin-bottom: 14px; }
+
+  @media print {
+    .controls-bar, .juris-strip, #status-bar { display: none !important; }
+    .nbody { max-width: 100%; padding: 20px 24px 40px; }
+    .acard { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="mrule"></div>
+  <div class="pub-name">The Capital Intelligence</div>
+  <div class="pub-tagline">Private Wealth · Capital Markets · Global Family Offices</div>
+  <div class="pub-meta">
+    <span id="meta-date"></span>
+    <span>Qualified Investors Only</span>
+    <span>Confidential</span>
+  </div>
+  <div class="mrulethin"></div>
+</header>
+
+<div class="juris-strip">
+  <span class="jbadge">🇺🇸 United States</span>
+  <span class="jbadge">🇮🇱 Israel</span>
+  <span class="jbadge">🇦🇪 Gulf States</span>
+  <span class="jbadge">🇸🇬 Singapore</span>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls-bar">
+  <div class="cg" style="max-width:290px;">
+    <label>Sections</label>
+    <div class="chips">
+      <span class="chip on" data-val="equity">Equity &amp; Fixed Income</span>
+      <span class="chip on" data-val="alts">Alternatives</span>
+      <span class="chip on" data-val="wealth">Wealth &amp; Tax</span>
+      <span class="chip on" data-val="geo">Geopolitical Risk</span>
+    </div>
+  </div>
+  <div class="cg">
+    <label>Weekly theme — then press Generate</label>
+    <input type="text" id="theme-input" placeholder="e.g. Iran war risk, Fed pivot, Gulf capital flows…" />
+  </div>
+  <div class="cg" style="max-width:160px;">
+    <label>Market tone</label>
+    <select id="tone-select">
+      <option value="balanced">Balanced</option>
+      <option value="bullish">Constructive</option>
+      <option value="cautious">Cautious</option>
+      <option value="volatile">Risk-off</option>
+    </select>
+  </div>
+  <div class="btn-row">
+    <button class="pbtn" onclick="window.print()">⎙ Print</button>
+    <button class="gbtn" id="gen-btn" onclick="generate()">▶ Generate</button>
+  </div>
+</div>
+
+<!-- BODY -->
+<main class="nbody">
+  <div id="status-bar"><div class="sdot"></div><span id="status-text">Searching…</span></div>
+  <div id="newsletter-content">
+    <div class="placeholder">
+      <p>Configure your edition and press <strong>▶ Generate</strong>.</p>
+      <div class="tipbox">Tip: type any topic (e.g. "Iran war risk") then press Generate</div>
+    </div>
+  </div>
+</main>
+
+<footer class="nfooter">
+  <div class="frule"></div>
+  <p>The Capital Intelligence · Private &amp; Confidential · For Qualified Investors Only</p>
+  <p style="margin-top:5px;opacity:0.65;">Jurisdictions: United States · Israel · Gulf States (UAE, KSA, Qatar) · Singapore · AI-generated. Not investment advice.</p>
+</footer>
+
+<script>
+// ╔══════════════════════════════════════════════╗
+// ║           CONFIGURATION — EDIT HERE          ║
+// ╚══════════════════════════════════════════════╝
+const CONFIG = {
+  DEEPSEEK_KEY:  'sk-your-deepseek-key-here',   // platform.deepseek.com
+  DDGS_URL:      'http://localhost:8000',         // your local DDGS server
+  DEEPSEEK_URL:  'https://api.deepseek.com/v1/chat/completions',
+  MODEL:         'deepseek-chat',
+  MAX_TOKENS:    3500,
+  TEMPERATURE:   0.7,
+};
+// ╔══════════════════════════════════════════════╗
+// ║         END CONFIGURATION                    ║
+// ╚══════════════════════════════════════════════╝
+
+const now = new Date();
+document.getElementById('meta-date').textContent = now.toLocaleDateString('en-US', {
+  weekday:'long', year:'numeric', month:'long', day:'numeric'
+});
+
+// Chips
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('on')));
+function activeSections() { return [...document.querySelectorAll('.chip.on')].map(c => c.dataset.val); }
+
+// Section config
+const SECTIONS = {
+  equity: {
+    label: 'Equity & Fixed Income', icon: '§',
+    queries: ['S&P 500 stock market week', 'Israel TA-35 index latest', 'Saudi Tadawul market news', 'US Treasury yields bond market']
+  },
+  alts: {
+    label: 'Alternative Investments', icon: '◈',
+    queries: ['private equity deals 2025', 'hedge fund positioning markets', 'Dubai Singapore real estate investment', 'private credit market update']
+  },
+  wealth: {
+    label: 'Wealth Planning & Tax', icon: '⊕',
+    queries: ['Singapore family office tax 2025', 'DIFC family office UAE news', 'US estate tax FATCA update', 'Israel capital gains tachbiv']
+  },
+  geo: {
+    label: 'Geopolitical Risk', icon: '◉',
+    queries: ['Iran Middle East conflict markets', 'Israel security economy news', 'Gulf states capital flows oil', 'geopolitical risk investors 2025']
+  }
+};
+
+const JURIS_CONTEXT = `Client base — HNWI and family offices across:
+- USA: FATCA, estate tax, opportunity zones, muni bonds, global portfolios
+- Israel: TA-35, USD/ILS hedging, tech holdings, tachbiv capital gains, IRS-ITA treaty
+- Gulf States (UAE, KSA, Qatar): zero-tax, DIFC/ADGM/QFC structures, Vision 2030, sovereign co-invest, OFAC awareness
+- Singapore: 13O/13U MAS fund schemes, VCC structures, SGD safe-haven, SE Asia PE access`;
+
+const TOOLS = [{
+  type: 'function',
+  function: {
+    name: 'web_search',
+    description: 'Search the web for current financial news, market data, and geopolitical developments. Use for any topic needing up-to-date information.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Specific search query e.g. "Iran oil sanctions impact this week"' }
+      },
+      required: ['query'],
+      additionalProperties: false
+    }
+  }
+}];
+
+// Status helpers
+function setStatus(msg) {
+  document.getElementById('status-bar').classList.add('vis');
+  document.getElementById('status-text').textContent = msg;
+}
+function hideStatus() { document.getElementById('status-bar').classList.remove('vis'); }
+
+// DDGS search via local server
+async function ddgsSearch(query, type = 'news') {
+  try {
+    // Try news first (most relevant for financial briefings), fall back to text
+    const endpoint = type === 'news'
+      ? `${CONFIG.DDGS_URL}/search/news?q=${encodeURIComponent(query)}&timelimit=w&max_results=5`
+      : `${CONFIG.DDGS_URL}/search/text?q=${encodeURIComponent(query)}&max_results=5`;
+
+    const res = await fetch(endpoint);
+    if (!res.ok) throw new Error(`DDGS HTTP ${res.status}`);
+    const data = await res.json();
+    const results = Array.isArray(data) ? data : (data.results || []);
+    if (!results.length) return '[No results]';
+    return results.slice(0, 4).map(r =>
+      `${r.title || r.source || ''}: ${r.body || r.description || r.snippet || ''}`
+    ).join('\n');
+  } catch (e) {
+    // If news fails, try text search
+    if (type === 'news') return ddgsSearch(query, 'text');
+    return `[Search unavailable: ${e.message} — check DDGS server is running on ${CONFIG.DDGS_URL}]`;
+  }
+}
+
+// DeepSeek streaming call — returns { text, toolCalls, finishReason }
+async function callDeepSeek(messages, streamEl, useTools = true) {
+  const res = await fetch(CONFIG.DEEPSEEK_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${CONFIG.DEEPSEEK_KEY}`
+    },
+    body: JSON.stringify({
+      model: CONFIG.MODEL,
+      messages,
+      tools: useTools ? TOOLS : undefined,
+      tool_choice: useTools ? 'auto' : undefined,
+      stream: true,
+      max_tokens: CONFIG.MAX_TOKENS,
+      temperature: CONFIG.TEMPERATURE
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `DeepSeek HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', text = '', finishReason = '';
+  const tcMap = {};
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const d = line.slice(6).trim();
+      if (d === '[DONE]') continue;
+      try {
+        const ev = JSON.parse(d);
+        const delta = ev.choices?.[0]?.delta;
+        if (ev.choices?.[0]?.finish_reason) finishReason = ev.choices[0].finish_reason;
+        if (delta?.content) {
+          text += delta.content;
+          if (streamEl) streamEl.textContent = text;
+        }
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const i = tc.index ?? 0;
+            if (!tcMap[i]) tcMap[i] = { id:'', type:'function', function:{ name:'', arguments:'' } };
+            if (tc.id) tcMap[i].id = tc.id;
+            if (tc.function?.name) tcMap[i].function.name += tc.function.name;
+            if (tc.function?.arguments) tcMap[i].function.arguments += tc.function.arguments;
+          }
+        }
+      } catch {}
+    }
+  }
+  return { text, toolCalls: Object.values(tcMap), finishReason };
+}
+
+// Main generate
+async function generate() {
+  const sections = activeSections();
+  if (!sections.length) { alert('Select at least one section.'); return; }
+  if (CONFIG.DEEPSEEK_KEY === 'sk-your-deepseek-key-here') {
+    alert('Please set your DeepSeek API key in the CONFIG block at the top of this file.');
+    return;
+  }
+
+  const theme = document.getElementById('theme-input').value.trim();
+  const tone = document.getElementById('tone-select').value;
+  const toneDesc = {
+    balanced: 'balanced and analytical',
+    bullish: 'constructive and cautiously optimistic',
+    cautious: 'cautious and defensive, flagging downside risks',
+    volatile: 'risk-aware, emphasising capital preservation and safe-haven positioning'
+  }[tone];
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.textContent = '◌ Working…';
+
+  const content = document.getElementById('newsletter-content');
+  content.innerHTML = '<div id="stream-display"></div>';
+  const streamEl = document.getElementById('stream-display');
+
+  // Step 1 — parallel news searches per section
+  setStatus('Searching markets via DDGS…');
+  const searchContext = {};
+  let searchAvailable = false;
+  await Promise.all(sections.map(async sec => {
+    const queries = theme
+      ? [`${theme} markets investors`, ...SECTIONS[sec].queries.slice(0, 2)]
+      : SECTIONS[sec].queries.slice(0, 3);
+    setStatus(`Searching: ${SECTIONS[sec].label}…`);
+    const results = await Promise.all(queries.map(q => ddgsSearch(q, 'news')));
+    const joined = results.join('\n\n');
+    searchContext[sec] = joined;
+    if (!joined.includes('[Search unavailable') && !joined.includes('[No results]')) {
+      searchAvailable = true;
+    }
+  }));
+
+  const contextBlock = sections.map(s =>
+    `=== ${SECTIONS[s].label} — Live News ===\n${searchContext[s]}`
+  ).join('\n\n');
+
+  const themeClause = theme
+    ? `\nEditorial theme this week: "${theme}" — weave this through every section.\n`
+    : '';
+
+  const systemPrompt = `You are the chief investment strategist of "The Capital Intelligence," an exclusive weekly newsletter for ultra-high-net-worth individuals and family offices.
+
+${JURIS_CONTEXT}
+
+Write with the precision of a senior private banker. Be specific — name instruments, index levels, yield levels, deal sizes, geographies. Never generic.
+
+IMPORTANT: If live search results are provided, use them. If search is unavailable or returns errors, use your own knowledge and training data — do NOT refuse to write or ask clarifying questions. Always produce the full newsletter regardless of search availability. Your knowledge of markets, geopolitics, and wealth structures is sufficient to produce a high-quality briefing.
+
+For EACH section, use EXACTLY this format:
+
+[KICKER — 4 TO 6 WORDS ALL CAPS]
+Headline: [Specific newspaper-quality headline]
+[2-3 paragraphs of substantive analysis grounded in the live news provided. Reference specific developments.]
+Sentiment: BULLISH | BEARISH | NEUTRAL | WATCH
+
+After all sections end with:
+EDITOR'S OUTLOOK
+"[1-2 sentence pull quote synthesising the week's central thesis.]"
+— The Capital Intelligence Editorial Board
+
+Tone: ${toneDesc}.${themeClause}
+You may call web_search for any additional current data you need beyond what's provided.`;
+
+  const userPrompt = `Write this week's edition. Date: ${now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}.
+
+Sections: ${sections.map(s => SECTIONS[s].label).join(', ')}
+
+LIVE NEWS RESEARCH:
+${contextBlock}
+
+Write each section grounded in the research above. Call web_search if you need more on any specific topic.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ];
+
+  setStatus(searchAvailable ? 'DeepSeek V3 drafting briefing with live data…' : 'DDGS offline — drafting from DeepSeek knowledge…');
+
+  // Step 2 — agentic DeepSeek loop
+  let fullText = '';
+  let iters = 0;
+
+  try {
+    while (iters < 6) {
+      iters++;
+      const { text, toolCalls, finishReason } = await callDeepSeek(messages, streamEl, searchAvailable);
+      fullText = text;
+
+      if (!toolCalls.length || finishReason === 'stop') break;
+
+      // Execute tool calls via DDGS
+      messages.push({ role: 'assistant', content: text || null, tool_calls: toolCalls });
+
+      for (const tc of toolCalls) {
+        let result = '';
+        try {
+          const args = JSON.parse(tc.function.arguments || '{}');
+          setStatus(`Searching: "${args.query}"…`);
+          result = await ddgsSearch(args.query, 'news');
+        } catch (e) {
+          result = `Tool error: ${e.message}`;
+        }
+        messages.push({ role: 'tool', tool_call_id: tc.id, content: result });
+      }
+      messages.push({ role: 'user', content: 'Continue writing the newsletter using the search results.' });
+    }
+  } catch (err) {
+    content.innerHTML = `<div class="placeholder">
+      <p style="color:#9B2020;font-style:normal;margin-bottom:10px;">Error: ${err.message}</p>
+      <p style="font-size:13px;">Check your DeepSeek key in CONFIG and that DDGS is running on ${CONFIG.DDGS_URL}</p>
+    </div>`;
+    hideStatus();
+    btn.disabled = false; btn.textContent = '▶ Generate';
+    return;
+  }
+
+  hideStatus();
+  renderFormatted(fullText, sections, content);
+  btn.disabled = false; btn.textContent = '▶ Generate';
+}
+
+// Render
+function renderFormatted(text, sections, container) {
+  const dateStr = now.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  let html = `<div class="edition-badge">Live Edition · ${dateStr}</div>`;
+
+  html += `<div class="data-strip">
+    <div class="dc"><div class="dt">S&amp;P 500</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">TA-35</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">Tadawul</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">STI SG</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">Gold</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">Brent</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">10Y UST</div><div class="dv">—</div><div class="dch fl">live</div></div>
+    <div class="dc"><div class="dt">USD/ILS</div><div class="dv">—</div><div class="dch fl">live</div></div>
+  </div>`;
+
+  const lines = text.split('\n');
+  let cards = [], cur = null, inOutlook = false, outlookText = '';
+
+  function flush() {
+    if (cur && (cur.kicker || cur.headline || cur.body?.length)) { cards.push(cur); cur = null; }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    if (/editor.?s outlook/i.test(line)) { flush(); inOutlook = true; continue; }
+    if (inOutlook) { outlookText += ' ' + line; continue; }
+
+    const secKey = sections.find(k => {
+      const kw = SECTIONS[k].label.split(/[\s&]/)[0];
+      return new RegExp(kw, 'i').test(line) && line.length < 80;
+    });
+    if (secKey) { flush(); cards.push({ type:'section', key:secKey }); continue; }
+
+    const hlm = line.match(/^headline:\s*(.+)/i);
+    if (hlm) { if (!cur) cur = {}; cur.headline = hlm[1].replace(/\*+/g,''); continue; }
+
+    const sm = line.match(/^sentiment:\s*(BULLISH|BEARISH|NEUTRAL|WATCH)/i);
+    if (sm) { if (!cur) cur = {}; cur.sentiment = sm[1].toUpperCase(); flush(); continue; }
+
+    const isKicker = line === line.toUpperCase() && line.length < 65
+      && !line.includes(':') && /[A-Z]{3,}/.test(line) && !/^\d+$/.test(line);
+    if (isKicker) { flush(); cur = { kicker: line }; continue; }
+
+    if (!cur) cur = {};
+    if (!cur.body) cur.body = [];
+    const clean = line.replace(/\*\*/g,'').replace(/\*/g,'');
+    if (clean) cur.body.push(clean);
+  }
+  flush();
+
+  for (const card of cards) {
+    if (card.type === 'section') {
+      const m = SECTIONS[card.key];
+      html += `<div class="shead"><div class="srule"></div><div class="slabel">${m.icon} ${m.label}</div><div class="srule"></div></div>`;
+    } else {
+      html += `<div class="acard">`;
+      if (card.kicker) html += `<div class="akicker">${card.kicker}</div>`;
+      if (card.headline) html += `<div class="aheadline">${card.headline}</div>`;
+      (card.body || []).forEach(p => { html += `<p class="abody">${p}</p>`; });
+      if (card.sentiment) {
+        const cls = {BULLISH:'bull',BEARISH:'bear',NEUTRAL:'neut',WATCH:'watch'}[card.sentiment]||'neut';
+        html += `<span class="atag t-${cls}">${card.sentiment}</span>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  if (outlookText.trim()) {
+    const q = outlookText
+      .replace(/[""\u201c\u201d]/g,'')
+      .replace(/—\s*The Capital Intelligence.*$/i,'')
+      .replace(/^\s*[-–—]\s*/,'')
+      .trim();
+    html += `<div class="pquote"><p>\u201c${q}\u201d</p><cite>— The Capital Intelligence Editorial Board</cite></div>`;
+  }
+
+  container.innerHTML = html;
+}
+</script>
+</body>
+</html>
